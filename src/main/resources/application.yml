@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: netty-chat
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/netty-chat?serverTimezone=UTC&userUnicode=true&useSSL=false&allowPublicKeyRetrieval=true&
+    username: root
+    password: 150820
+server:
+  servlet:
+    context-path: /chat
+  port: 52666
+netty:
+  server:
+    port: 52002
+logging:
+  config: classpath:log4j2-dev.xml
