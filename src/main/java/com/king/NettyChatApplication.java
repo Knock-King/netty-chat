@@ -1,6 +1,6 @@
 package com.king;
 
-import com.king.nettyConfig.NettyServer;
+import com.king.config.NettyServer;
 import com.king.utils.SpringBeanUtil;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;

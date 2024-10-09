@@ -1,7 +1,7 @@
-package com.king.nettyConfig;
+package com.king.config;
 
-import com.king.nettyConfig.handler.NettyHeartBeatHandler;
-import com.king.nettyConfig.handler.NettyWsChannelInboundHandler;
+import com.king.config.handler.NettyHeartBeatHandler;
+import com.king.config.handler.NettyWsChannelInboundHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;

@@ -1,4 +1,4 @@
-package com.king.nettyConfig.user;
+package com.king.config.user;
 
 import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroup;

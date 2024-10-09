@@ -1,6 +1,6 @@
-package com.king.nettyConfig.handler;
+package com.king.config.handler;
 
-import com.king.nettyConfig.user.UserChannelRel;
+import com.king.config.user.UserChannelRel;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;

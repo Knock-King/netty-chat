@@ -1,4 +1,4 @@
-package com.king.nettyConfig;
+package com.king.config;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
