@@ -1,0 +1,505 @@
+<html xmlns:v-bind="http://www.w3.org/1999/xhtml">
+<head>
+    <meta content="width=device-width,initial-scale=1.0" name="viewport">
+    <meta charset="utf-8">
+    <link href="./css/chat.css" rel="stylesheet">
+    <title>聊天</title>
+</head>
+<body>
+<div id="showApp">
+    <div class="aaa">
+        <div class="container">
+            <div class="leftSide">
+                <!--header-->
+                <div class="header">
+                    <div class="userimg">
+                        <img :src="'http://localhost:9000' + imChatUser.pictureUrl" class="cover">
+                    </div>
+                    <ul class="nav_icons">
+                        <li><img src="../common/img/icon/消息.png"></li>
+                        <li><img src="../common/img/icon/更多.png"></li>
+                    </ul>
+                </div>
+                <!--search-->
+                <div class="search_chat">
+                    <div>
+                        <input placeholder="搜索..." type="text">
+                        <img src="../common/img/icon/搜索_16.png" style="margin-top: 3px">
+                    </div>
+                </div>
+                <div class="ChatA">
+                    <!--ChatList-->
+                    <div :key="item.id" class="chatlist" v-for="(item,index) in friendList">
+                        <div @click="xuanZhong(item.id,index)" class="block "
+                             v-bind:class="{'active':item.checked,'unread': !item.checked}"><!---->
+                            <div class="imgbx">
+                                <img :src="'http://localhost:9000' +item.pictureUrl" class="cover">
+                            </div>
+                            <div class="details">
+                                <div class="listHead">
+                                    <h4>{{item.nickname}}</h4>
+                                    <p class="time"
+                                       v-if="item.chatFriendMsgLogs[item.chatFriendMsgLogs.length-1]==undefined ||item.chatFriendMsgLogs[item.chatFriendMsgLogs.length-1]==null || item.chatFriendMsgLogs[item.chatFriendMsgLogs.length-1]==''"></p>
+                                    <p class="time" v-else>
+                                        {{item.chatFriendMsgLogs[item.chatFriendMsgLogs.length - 1].sendTime}}</p>
+                                </div>
+                                <div class="message_p">
+                                    <p v-if="item.chatFriendMsgLogs[item.chatFriendMsgLogs.length-1]==undefined ||item.chatFriendMsgLogs[item.chatFriendMsgLogs.length-1]==null || item.chatFriendMsgLogs[item.chatFriendMsgLogs.length-1]==''"></p>
+                                    <p v-else>
+                                        {{item.chatFriendMsgLogs[item.chatFriendMsgLogs.length - 1].msgContent}}</p>
+
+                                    <b v-show="item.weiDuNumber>0">{{item.weiDuNumber}}</b>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+
+
+            <div class="rightSide">
+                <div class="header" v-if="msgShow">
+                    <div class="imgText">
+                        <div class="userimg">
+                            <img :src="'http://localhost:9000' +currFriendList.pictureUrl" class="cover">
+                        </div>
+                        <h4>{{currFriendList.nickname}}<br><span>{{currFriendList.remark}}</span></h4>
+                    </div>
+                    <ul class="nav_icons">
+                        <li><img src="../common/img/icon/消息.png"></li>
+                        <li><img src="../common/img/icon/更多.png"></li>
+                    </ul>
+                </div>
+                <!--chatbox-->
+                <div class="chatBox" id="huaDong" v-if="msgShow">
+                    <div :key="item.id" class="message"
+                         v-bind:class="{'my_message':item.userId==imChatUser.id,'frnd_message':item.userId!=imChatUser.id}"
+                         v-for="(item,index) in currFriendList.chatFriendMsgLogs">
+                        <p>{{item.msgContent}}<br><span>{{item.sendTime}}</span></p>
+                    </div>
+                </div>
+
+                <!--chat input-->
+                <div class="chatbox_input" v-if="msgShow">
+                    <div class="instrument" style="margin-bottom: 10px">
+                        <a href="#"><img src="../common/img/icon/表情.png"></a>
+                        <a href="#"><img src="../common/img/icon/图片.png"></a>
+                    </div>
+                    <input id="content" placeholder="请输入消息" type="text" v-model="msgContent">
+                    <button @click="sendFriend()" class="layui-btn layui-btn-normal layui-btn-radius" type="button">发送<i
+                            class="layui-icon layui-icon-release"></i></button>
+
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <div id="foot"></div>
+</div>
+
+</body>
+<script src="./js/vue.js"></script>
+<script src="./js/jquery-1.12.3.min.js"></script>
+<script src="./js/axios.min.js"></script>
+<script src="./js/getParameter.js"></script>
+<script>
+    var wsWebSocketUrl = "ws://127.0.0.1:52002/ws";
+    var friendId = null;
+    let app = new Vue({
+        el: "#showApp",
+        data: {
+            logo: "../common/img/logo_no.png",
+            //当前用户
+            imChatUser: {},
+            username: '测试',
+            isShow: true,
+            msgShow: false,
+            //朋友列表
+            friendList: [],
+            //选择的朋友
+            currFriendList: {},
+            websocket: null, // WebSocket对象
+            reconnectInterval: 3000, // 重连间隔时间（毫秒）
+            heartbeatInterval: null, // 心跳定时器
+            msgContent: '',
+            unReadMsgNumber: {
+                replyMe: 0,
+                aiteMe: 0,
+                likesReceived: 0,
+                systemMsg: 0,
+                total: 0,
+            },
+
+        },
+        created() {
+            friendId = getParameter("friendId");
+            this.getUserInformation()
+            this.getFriendList()
+            this.getUnReadMsgNumber()
+        },
+        mounted() {
+
+        },
+        beforeDestroy() {
+            this.closeWebSocket(); // 在组件销毁前关闭WebSocket连接
+        },
+        methods: {
+            getUnReadMsgNumber() {
+                let that = this;
+                $.ajax({
+                        url: "../../chat/getUnReadMsgNumber",
+                        type: "get",
+                        headers: { // 设置请求头
+                            Authorization: "bearer " + accessToken_user
+                        },
+                        success: function (res) {
+                            that.unReadMsgNumber = res.result;
+                        },
+                        error: function () {
+                        },
+                    }
+                )
+            },
+            sendFriend() {
+                if (this.msgContent === null || this.msgContent == '' || this.msgContent.length == 0) {
+                    layer.msg('请输入聊天内容', {icon: 5});
+                    return;
+                }
+
+                const chatMsgObj = {
+                    sendId: this.imChatUser.id,	// 发送者的用户id
+                    receiveId: this.currFriendList.friendUserId,				// 接受者的用户id
+                    msgContent: this.msgContent,				// 聊天内容
+                    msgId: ""					// 用于消息的签收
+                }
+                const msgObj = {
+                    action: 2,			// CONNECT(1, "第一次(或重连)初始化连接"), CHAT(2, "聊天消息"), SIGNED(3, "消息签收"),
+                    // KEEPALIVE(4, "客户端保持心跳"), PULL_FRIEND(5, "拉取好友");
+                    chatMsg: chatMsgObj,	// 用户的聊天内容entity
+                    extand: ""			// 扩展字段
+                }
+                this.msgContent = ''
+                this.sendMessage(JSON.stringify(msgObj))
+
+
+            },
+            setupWebSocket() {
+                this.websocket = new WebSocket(wsWebSocketUrl); // 创建WebSocket连接
+                this.websocket.onopen = this.onWebSocketOpen; // WebSocket连接打开时的处理函数
+                this.websocket.onmessage = this.onWebSocketMessage; // 收到WebSocket消息时的处理函数
+                this.websocket.onclose = this.onWebSocketClose; // WebSocket连接关闭时的处理函数
+
+            },
+            closeWebSocket() {
+                if (this.websocket) {
+                    this.websocket.close(); // 关闭WebSocket连接
+                }
+            },
+            /**
+             *  WebSocket连接打开后，启动心跳检测
+             */
+            onWebSocketOpen() {
+                this.startHeartbeat();
+                // 发送初始化消息
+                const chatMsgObj = {
+                    sendId: this.imChatUser.id,	// 发送者的用户id
+                    receiveId: "",				// 接受者的用户id
+                    msgContent: "",				// 聊天内容
+                    msgId: ""					// 用于消息的签收
+                }
+                const msgObj = {
+                    action: 1,			// CONNECT(1, "第一次(或重连)初始化连接"), CHAT(2, "聊天消息"), SIGNED(3, "消息签收"),
+                    // KEEPALIVE(4, "客户端保持心跳"), PULL_FRIEND(5, "拉取好友");
+                    chatMsg: chatMsgObj,	// 用户的聊天内容entity
+                    extand: ""			// 扩展字段
+                }
+                this.sendMessage(JSON.stringify(msgObj))
+
+            },
+            // 处理从服务器接收的消息
+            onWebSocketMessage(event) {
+                if (event.data) {
+                    const dataContent = JSON.parse(event.data);
+                    //    根据业务来处理数据
+                    var action = dataContent.action;
+                    var chatMsg = dataContent.chatMsg;
+                    var chatFriendMsgLogs = dataContent.chatFriendMsgLogs;
+                    chatFriendMsgLogs.sendTime = chatFriendMsgLogs.sendTime.year + "-" + chatFriendMsgLogs.sendTime.monthValue + "-" + chatFriendMsgLogs.sendTime.dayOfYear + " " + chatFriendMsgLogs.sendTime.hour + ":" + chatFriendMsgLogs.sendTime.minute + ":" + chatFriendMsgLogs.sendTime.second;
+                    var msgContent = chatMsg.msgContent;
+                    var msgId = chatMsg.msgId;
+                    // 发送者id
+                    var sendId = chatMsg.sendId;
+                    var sendTime = chatMsg.sendTime;
+                    // 接受者id
+                    var receiveId = chatMsg.receiveId;
+
+
+                    if (action == 2) {
+                        if (this.imChatUser.id == sendId) {
+                            //自己发的
+                            let friend = this.friendList.find(item => item.friendUserId == receiveId);
+                            //添加到消息中
+                            friend.chatFriendMsgLogs.push(chatFriendMsgLogs)
+
+                            if (this.currFriendList.friendUserId == friend.friendUserId) {
+                                //当前窗口正是发送消息对象
+                                setTimeout(function () {
+                                    //1秒后执行刷新
+                                    $(".chatBox").scrollTop($(".chatBox")[0].scrollHeight);
+                                }, 10); //单位是毫秒
+
+                            }
+                            let find = this.friendList.find(item => item.id == this.currFriendList.id);
+                            var timestamp = Date.parse(new Date());
+                            find.shiCuo = timestamp;
+                            this.friendList = this.friendList.sort(function (a, b) {
+                                return b.shiCuo - a.shiCuo;
+                            });
+
+                        }
+
+                        if (this.imChatUser.id == receiveId) {
+                            //别人发给自己的
+                            let friend = this.friendList.find(item => item.friendUserId == sendId);
+
+                            friend.chatFriendMsgLogs.push(chatFriendMsgLogs)
+                            if (this.currFriendList.friendUserId == friend.friendUserId) {
+                                //当前窗口正是发送消息对象
+
+                                setTimeout(function () {
+                                    //1秒后执行刷新
+                                    $(".chatBox").scrollTop($(".chatBox")[0].scrollHeight);
+                                }, 10); //单位是毫秒
+
+                                //发送已读
+                                const chatMsgObj = {
+                                    sendId: this.imChatUser.id,	// 发送者的用户id
+                                    receiveId: "",				// 接受者的用户id
+                                    msgContent: "",				// 聊天内容
+                                    msgId: ""					// 用于消息的签收
+                                }
+                                const msgObj = {
+                                    action: 3,			// CONNECT(1, "第一次(或重连)初始化连接"), CHAT(2, "聊天消息"), SIGNED(3, "消息签收"),
+                                    // KEEPALIVE(4, "客户端保持心跳"), PULL_FRIEND(5, "拉取好友");
+                                    chatMsg: chatMsgObj,	// 用户的聊天内容entity
+                                    extand: msgId			// 扩展字段
+                                }
+                                this.sendMessage(JSON.stringify(msgObj))
+
+                            } else {
+                                //未读数量加一
+                                friend.weiDuNumber += 1;
+                            }
+
+                            let find = this.friendList.find(item => item.friendUserId == sendId);
+                            var timestamp = Date.parse(new Date());
+                            find.shiCuo = timestamp;
+                            console.log(find)
+                            this.friendList = this.friendList.sort(function (a, b) {
+                                return b.shiCuo - a.shiCuo;
+                            });
+                        }
+                    }
+
+                }
+            },
+            onWebSocketClose() {
+                this.stopHeartbeat(); // WebSocket连接关闭时，停止心跳检测
+                setTimeout(this.setupWebSocket, this.reconnectInterval); // 在一定时间后重连WebSocket
+            },
+            sendMessage(message) {
+                if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+                    this.websocket.send(message); // 发送消息到WebSocket服务器
+                }
+            },
+            startHeartbeat() {
+                this.heartbeatInterval = setInterval(() => {
+                    if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+                        const chatMsgObj = {
+                            sendId: this.imChatUser.id,	// 发送者的用户id
+                            receiveId: "",				// 接受者的用户id
+                            msgContent: "",				// 聊天内容
+                            msgId: ""					// 用于消息的签收
+                        }
+                        const msgObj = {
+                            action: 4,			// CONNECT(1, "第一次(或重连)初始化连接"), CHAT(2, "聊天消息"), SIGNED(3, "消息签收"),
+                            // KEEPALIVE(4, "客户端保持心跳"), PULL_FRIEND(5, "拉取好友");
+                            chatMsg: chatMsgObj,	// 用户的聊天内容entity
+                            extand: ""			// 扩展字段
+                        }
+                        this.sendMessage(JSON.stringify(msgObj));
+                    }
+                }, 10000); // 每10秒发送一次心跳
+            },
+            stopHeartbeat() {
+                if (this.heartbeatInterval) {
+                    clearInterval(this.heartbeatInterval); // 停止心跳检测定时器
+                }
+            },
+
+            //获取登录者信息，并初始化连接
+            getUserInformation() {
+                var that = this;
+                $.ajax({
+                    url: "../../user/user/getMyselfInfo",
+                    type: "get",
+                    headers: {
+                        Authorization: "bearer " + accessToken_user,
+                    },
+                    success: function (res) {
+                        if (res.code == 200) {
+                            that.imChatUser = res.result;
+                            that.setupWebSocket(); // 创建WebSocket连接
+
+
+                        } else {
+                            flag(res.code, res.msg);
+                        }
+
+                    },
+                    error: function () {
+                    },
+                })
+            },
+            //获取朋友列表
+            getFriendList() {
+                var that = this;
+                $.ajax({
+                    url: "../../chat/chat/getFriendList",
+                    type: "get",
+                    headers: {
+                        Authorization: "bearer " + accessToken_user,
+                    },
+                    success: function (res) {
+                        if (res.code == 200) {
+                            let result = res.result;
+                            let sort = result.sort(function (a, b) {
+
+                                return b.shiCuo - a.shiCuo;
+                            });
+                            that.friendList = sort;
+                            if (friendId != "" && friendId != null && friendId != undefined) {
+                                let aaa = that.friendList.find(item => item.friendUserId == friendId);
+                                if (aaa == null) {
+                                    layer.msg("该商户异常，请骚后再试")
+                                } else {
+                                    that.currFriendList = aaa;
+                                    let find = that.friendList.find(item => item.checked == true);
+                                    if (find == undefined || find == null || find == "") {
+
+                                    } else {
+                                        find.checked = false;
+                                    }
+                                    aaa.checked = true;
+
+                                    that.msgShow = true;
+                                    //变为已读
+                                    let extend = ''
+
+                                    if (aaa.weiDuNumber != 0) {
+                                        that.currFriendList.chatFriendMsgLogs.forEach(item => {
+
+                                            if (item.msgReadStatus == 2) {
+                                                extend += item.id;
+                                                extend += ","
+                                                item.msgReadStatus = 1
+                                            }
+
+                                        })
+                                        let s = extend.slice(0, -1);
+                                        const chatMsgObj = {
+                                            sendId: that.imChatUser.id,	// 发送者的用户id
+                                            receiveId: "",				// 接受者的用户id
+                                            msgContent: "",				// 聊天内容
+                                            msgId: ""					// 用于消息的签收
+                                        }
+                                        const msgObj = {
+                                            action: 3,			// CONNECT(1, "第一次(或重连)初始化连接"), CHAT(2, "聊天消息"), SIGNED(3, "消息签收"),
+                                            // KEEPALIVE(4, "客户端保持心跳"), PULL_FRIEND(5, "拉取好友");
+                                            chatMsg: chatMsgObj,	// 用户的聊天内容entity
+                                            extand: s			// 扩展字段
+                                        }
+                                        that.sendMessage(JSON.stringify(msgObj))
+                                        aaa.weiDuNumber = 0;
+                                    }
+                                    setTimeout(function () {
+                                        //1秒后执行刷新
+                                        $(".chatBox").scrollTop($(".chatBox")[0].scrollHeight);
+                                    }, 10); //单位是毫秒
+                                }
+                            }
+                        } else {
+                            flag(res.code, res.msg);
+                        }
+
+                    },
+                    error: function () {
+                    },
+                })
+            },
+            logout() {
+                localStorage.removeItem("accessToken_user")
+                localStorage.removeItem("refreshToken_user")
+                localStorage.removeItem("user")
+                location.href = "http://localhost:52501/ui/login.html"
+
+            },
+            xuanZhong(id, index) {
+                this.currFriendList = this.friendList[index];
+                let find = this.friendList.find(item => item.checked == true);
+                if (find == undefined || find == null || find == "") {
+                } else {
+                    find.checked = false;
+                }
+                this.friendList[index].checked = true;
+
+                this.msgShow = true;
+                //变为已读
+                let extend = ''
+
+                if (this.friendList[index].weiDuNumber != 0) {
+                    this.currFriendList.chatFriendMsgLogs.forEach(item => {
+
+                        if (item.msgReadStatus == 2) {
+                            extend += item.id;
+                            extend += ","
+                            item.msgReadStatus = 1
+                        }
+
+                    })
+                    let s = extend.slice(0, -1);
+                    const chatMsgObj = {
+                        sendId: this.imChatUser.id,	// 发送者的用户id
+                        receiveId: "",				// 接受者的用户id
+                        msgContent: "",				// 聊天内容
+                        msgId: ""					// 用于消息的签收
+                    }
+                    const msgObj = {
+                        action: 3,			// CONNECT(1, "第一次(或重连)初始化连接"), CHAT(2, "聊天消息"), SIGNED(3, "消息签收"),
+                        // KEEPALIVE(4, "客户端保持心跳"), PULL_FRIEND(5, "拉取好友");
+                        chatMsg: chatMsgObj,	// 用户的聊天内容entity
+                        extand: s			// 扩展字段
+                    }
+                    this.sendMessage(JSON.stringify(msgObj))
+                    this.friendList[index].weiDuNumber = 0;
+                }
+                setTimeout(function () {
+                    //1秒后执行刷新
+                    $(".chatBox").scrollTop($(".chatBox")[0].scrollHeight);
+                }, 10); //单位是毫秒
+
+
+            },
+        },
+        watch: {}
+
+
+    })
+</script>
+
+</html>

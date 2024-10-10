@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.king.mapper.ChatFriendInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.king.model.po.ChatFriendInfo">
+        <result column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="friend_user_id" property="friendUserId"/>
+        <result column="friend_remark" property="friendRemark"/>
+        <result column="createTime" property="createTime"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="remark" property="remark"/>
+        <result column="dataStatus" property="dataStatus"/>
+        <result column="friendStatus" property="friendStatus"/>
+    </resultMap>
+
+
+</mapper>

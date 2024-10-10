@@ -1,15 +1,21 @@
 package com.king.config.handler;
 
 import com.king.config.user.UserChannelRel;
+import com.king.model.entity.ChatMsg;
 import com.king.model.entity.DataContent;
 import com.king.model.enums.MsgActionEnum;
+import com.king.model.po.ChatFriendMsgLogs;
+import com.king.service.ChatFriendMsgLogsService;
 import com.king.utils.JsonUtils;
+import com.king.utils.SpringBeanUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ObjectUtils;
+
+import java.util.Date;
 
 import static com.king.config.user.UserChannelRel.users;
 
@@ -42,6 +48,61 @@ public class NettyWsChannelInboundHandler extends SimpleChannelInboundHandler<Te
             UserChannelRel.put(sendId, currentChannel);
         } else if (MsgActionEnum.CHAT.type.equals(action)) {
             //聊天消息
+            //把聊天记录保存到数据库，同时标记消息的签收状态[未签收]
+            ChatFriendMsgLogsService chatFriendMsgLogsService
+                    = (ChatFriendMsgLogsService) SpringBeanUtil
+                    .getBean("chatFriendMsgLogsServiceImpl");
+            //解析消息体
+            ChatMsg chatMsg = dataContent.getChatMsg();
+            String sendId = chatMsg.getSendId();
+            String receiveId = chatMsg.getReceiveId();
+            String msgContent = chatMsg.getMsgContent();
+            Long userId = chatMsg.getUserId();
+            // 保存消息到数据库，并且标记为 未签收
+            ChatFriendMsgLogs chatFriendMsgLogs = new ChatFriendMsgLogs();
+            chatFriendMsgLogs.setSendId(sendId);
+            chatFriendMsgLogs.setReceiveId(receiveId);
+            chatFriendMsgLogs.setMsgContent(msgContent);
+            chatFriendMsgLogs.setUserId(userId);
+            chatFriendMsgLogs.setMsgType(dataContent.getMsgType());
+            ChatFriendMsgLogs logs = chatFriendMsgLogsService.saveMsgLogs(chatFriendMsgLogs);
+            //获取消息id设置进消息体中
+            Long msgId = logs.getId();
+            chatMsg.setMsgId(msgId.toString());
+            chatMsg.setSendTime(new Date());
+            //重新封装消息体
+            DataContent dataContentMsg = new DataContent();
+            dataContentMsg.setChatMsg(chatMsg);
+            dataContentMsg.setAction(MsgActionEnum.CHAT.type);
+            dataContentMsg.setMsgType(dataContent.getMsgType());
+            //给自己发送消息发送成功的消息
+            //获取自己的channel
+            Channel sendChannel = UserChannelRel.get(sendId);
+            //发送消息
+            sendChannel.writeAndFlush(
+                    new TextWebSocketFrame(
+                            JsonUtils.objectToJson(dataContentMsg)));
+            //给接收方发送消息
+            //获取接收方的channel
+            Channel receiveChannel = UserChannelRel.get(receiveId);
+            if (ObjectUtils.isEmpty(receiveChannel)) {
+                // channel为空代表用户离线，添加离线消息记录
+                log.info("用户id为{}的用户已离线", receiveId);
+                chatFriendMsgLogsService.updateOfflineStatus(msgId);
+            } else {
+                //从在现用户组里面获取channel
+                Channel channel = users.find(receiveChannel.id());
+                if (ObjectUtils.isEmpty(channel)) {
+                    //用户离线,推送消息,添加离线消息记录
+                    log.info("用户id为{}的用户已离线", receiveId);
+                    chatFriendMsgLogsService.updateOfflineStatus(msgId);
+                } else {
+                    //用户在线,发送实时消息
+                    channel.writeAndFlush(
+                            new TextWebSocketFrame(
+                                    JsonUtils.objectToJson(dataContentMsg)));
+                }
+            }
         } else if (MsgActionEnum.SIGNED.type.equals(action)) {
             //消息签收
         } else if (MsgActionEnum.KEEPALIVE.type.equals(action)) {
