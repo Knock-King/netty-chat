@@ -6,16 +6,21 @@ import com.king.model.entity.DataContent;
 import com.king.model.enums.MsgActionEnum;
 import com.king.model.po.ChatFriendMsgLogs;
 import com.king.service.ChatFriendMsgLogsService;
+import com.king.service.impl.ChatFriendMsgLogsServiceImpl;
 import com.king.utils.JsonUtils;
 import com.king.utils.SpringBeanUtil;
+import com.king.utils.ValidationUtils;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.ObjectUtils;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import static com.king.config.user.UserChannelRel.users;
 
@@ -105,6 +110,24 @@ public class NettyWsChannelInboundHandler extends SimpleChannelInboundHandler<Te
             }
         } else if (MsgActionEnum.SIGNED.type.equals(action)) {
             //消息签收
+            log.info("消息签收...");
+            // 扩展字段在signed类型的消息中，代表需要去签收的消息id，逗号间隔
+            String extend = dataContent.getExtend();
+            //获取签收消息的id数组
+            String[] signIds = extend.split(",");
+            //将数组转为集合，并将非空的塞入进去
+            List<String> signIdList = new ArrayList<>();
+            for (String signId : signIds) {
+                if (StringUtils.isNotBlank(signId)) {
+                    signIdList.add(signId);
+                }
+            }
+            if (ValidationUtils.isListNonEmpty(signIdList)) {
+                //签收消息类型，针对具体的消息进行签收，修改数据库中对应消息的签收状态[已签收]
+                //批量签收
+                ChatFriendMsgLogsServiceImpl chatMsgLogsService = (ChatFriendMsgLogsServiceImpl) SpringBeanUtil.getBean("chatFriendMsgLogsServiceImpl");
+                chatMsgLogsService.batchSignMsgs(signIdList);
+            }
         } else if (MsgActionEnum.KEEPALIVE.type.equals(action)) {
             //客户端保持心跳
             log.info("收到来自channel为[" + currentChannel + "]的心跳包...");

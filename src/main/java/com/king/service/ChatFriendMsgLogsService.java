@@ -32,4 +32,6 @@ public interface ChatFriendMsgLogsService extends IService<ChatFriendMsgLogs> {
     * @date 2024/10/10 10:53
     */
     void updateOfflineStatus(Long msgId);
+
+    void batchSignMsgs(List<String> signIdList);
 }

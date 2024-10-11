@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -45,7 +47,7 @@ public class ChatFriendMsgLogsServiceImpl extends ServiceImpl<ChatFriendMsgLogsM
         chatFriendMsgLogs.setFriendInfoId(chatFriendInfo.getId());
         chatFriendMsgLogs.setUserId(Long.valueOf(logs.getSendId()));
         chatFriendMsgLogs.setSendTime(LocalDateTime.now());
-        chatFriendMsgLogs.setMsgReadStatus(MsgReadStatus.STATUS_2.getCode());
+        chatFriendMsgLogs.setMsgReadStatus(MsgReadStatus.STATUS_NO_READ.getCode());
         chatFriendMsgLogs.setChatVersion(ChatVersion.VSERSION.getCode());
         chatFriendMsgLogs.setDataSources(DataSources.SOURCES_TO_COMPUTER.getCode());
         chatFriendMsgLogs.setDataStatus(1);
@@ -59,5 +61,17 @@ public class ChatFriendMsgLogsServiceImpl extends ServiceImpl<ChatFriendMsgLogsM
         logs.setId(msgId);
         logs.setMsgOfflineStatus(2);
         chatFriendMsgLogsMapper.updateById(logs);
+    }
+
+    @Override
+    public void batchSignMsgs(List<String> signIdList) {
+        List<ChatFriendMsgLogs> chatFriendMsgLogs = signIdList.stream().map(item -> {
+            ChatFriendMsgLogs logs = new ChatFriendMsgLogs();
+            logs.setId(Long.valueOf(item));
+            logs.setMsgReadStatus(MsgReadStatus.STATUS_READ.getCode());
+            logs.setReceiveTime(LocalDateTime.now());
+            return logs;
+        }).collect(Collectors.toList());
+        saveOrUpdateBatch(chatFriendMsgLogs);
     }
 }

@@ -10,11 +10,11 @@ public enum MsgReadStatus {
     /**
      * 1、已读
      */
-    STATUS_1(1, "已读"),
+    STATUS_READ(1, "已读"),
     /**
      * 2、未读
      */
-    STATUS_2(2, "未读");
+    STATUS_NO_READ(2, "未读");
     private Integer code;
     private String msg;
 
