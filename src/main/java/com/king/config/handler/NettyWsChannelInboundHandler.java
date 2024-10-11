@@ -6,6 +6,7 @@ import com.king.model.entity.DataContent;
 import com.king.model.enums.MsgActionEnum;
 import com.king.model.po.ChatFriendMsgLogs;
 import com.king.service.ChatFriendMsgLogsService;
+import com.king.service.ChatFriendRequestLogsService;
 import com.king.service.impl.ChatFriendMsgLogsServiceImpl;
 import com.king.utils.JsonUtils;
 import com.king.utils.SpringBeanUtil;
@@ -51,7 +52,8 @@ public class NettyWsChannelInboundHandler extends SimpleChannelInboundHandler<Te
             //当websocket 第一次open的时候，初始化channel，把用的channel和userid关联起来
             String sendId = dataContent.getChatMsg().getSendId();
             UserChannelRel.put(sendId, currentChannel);
-        } else if (MsgActionEnum.CHAT.type.equals(action)) {
+        }
+        else if (MsgActionEnum.CHAT.type.equals(action)) {
             //聊天消息
             //把聊天记录保存到数据库，同时标记消息的签收状态[未签收]
             ChatFriendMsgLogsService chatFriendMsgLogsService
@@ -108,7 +110,8 @@ public class NettyWsChannelInboundHandler extends SimpleChannelInboundHandler<Te
                                     JsonUtils.objectToJson(dataContentMsg)));
                 }
             }
-        } else if (MsgActionEnum.SIGNED.type.equals(action)) {
+        }
+        else if (MsgActionEnum.SIGNED.type.equals(action)) {
             //消息签收
             log.info("消息签收...");
             // 扩展字段在signed类型的消息中，代表需要去签收的消息id，逗号间隔
@@ -128,13 +131,19 @@ public class NettyWsChannelInboundHandler extends SimpleChannelInboundHandler<Te
                 ChatFriendMsgLogsServiceImpl chatMsgLogsService = (ChatFriendMsgLogsServiceImpl) SpringBeanUtil.getBean("chatFriendMsgLogsServiceImpl");
                 chatMsgLogsService.batchSignMsgs(signIdList);
             }
-        } else if (MsgActionEnum.KEEPALIVE.type.equals(action)) {
+        }
+        else if (MsgActionEnum.KEEPALIVE.type.equals(action)) {
             //客户端保持心跳
             log.info("收到来自channel为[" + currentChannel + "]的心跳包...");
         } else if (MsgActionEnum.PULL_FRIEND.type.equals(action)) {
             //拉取好友入群
         } else if (MsgActionEnum.FRIEND_REQUEST.type.equals(action)) {
             //好友申请
+            ChatMsg chatMsg = dataContent.getChatMsg();
+            ChatFriendRequestLogsService chatFriendRequestLogsService
+                    = (ChatFriendRequestLogsService) SpringBeanUtil
+                    .getBean("ChatFriendRequestLogsServiceImpl");
+            chatFriendRequestLogsService.AddFriend(chatMsg);
         } else if (MsgActionEnum.GROUP_MSG.type.equals(action)) {
             //群聊消息
         }
