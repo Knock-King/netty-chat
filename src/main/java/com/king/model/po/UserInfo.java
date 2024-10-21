@@ -22,6 +22,10 @@ public class UserInfo implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     /**
+     * 账户
+     */
+    private Long accountNumber;
+    /**
      * 用户头像
      */
     private String pictureUrl;

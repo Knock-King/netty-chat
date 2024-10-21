@@ -39,7 +39,7 @@ public class ChatFriendInfo implements Serializable {
     /**
      * 数据状态   1、正常     2、删除 自己--->朋友
      */
-    private Integer dataStatus;
+    private Integer userStatus;
     /**
      * 朋友数据状态   1、正常     2、删除 朋友--->自己
      */
