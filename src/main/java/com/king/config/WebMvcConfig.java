@@ -18,7 +18,7 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
     @Override
     protected void addResourceHandlers(ResourceHandlerRegistry registry) {
         System.out.println("开始进行静态资源映射...");
-        registry.addResourceHandler("/chat/**").addResourceLocations("classpath:/chat/");
+        registry.addResourceHandler("/nettyChat/**").addResourceLocations("classpath:/chat/");
     }
 
 }

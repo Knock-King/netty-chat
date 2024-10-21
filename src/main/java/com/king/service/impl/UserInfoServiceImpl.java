@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.time.LocalDateTime;
 
 /**
@@ -29,7 +30,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
     private UserInfoMapper userInfoMapper;
 
     @Override
-    public Boolean login(UserInfo userInfo, HttpServletRequest httpServletRequest) {
+    public Boolean login(UserInfo userInfo, HttpServletRequest httpServletRequest, HttpSession httpSession) {
         if (ObjectUtils.isEmpty(userInfo.getAccountNumber())) {
             NettyChatException.cast("请输入账户");
         }
@@ -46,14 +47,17 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         info.setIpAddress(ipAddr);
         info.setIpAddressTime(LocalDateTime.now());
         updateById(info);
+        httpSession.setAttribute("netty-chat-user",info.getId());
         return true;
     }
 
     @Override
-    public Boolean register(UserInfo userInfo) {
+    public Boolean register(UserInfo userInfo, HttpSession httpSession) {
         userInfo.setRegisterTime(LocalDateTime.now());
         userInfo.setAccountNumber(IdWorkerUtils.getInstance().nextId());
         userInfo.setUserStatus(1);
-        return save(userInfo);
+        boolean save = save(userInfo);
+        httpSession.setAttribute("netty-chat-user",userInfo.getId());
+        return save;
     }
 }

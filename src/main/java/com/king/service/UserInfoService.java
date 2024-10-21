@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.king.model.po.UserInfo;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * @author King
@@ -20,7 +21,7 @@ public interface UserInfoService  extends IService<UserInfo> {
      * @author King
      * @date 2024/10/21 16:07
      */
-    Boolean login(UserInfo userInfo, HttpServletRequest httpServletRequest);
+    Boolean login(UserInfo userInfo, HttpServletRequest httpServletRequest, HttpSession httpSession);
 
     /**
     * @description 用户注册逻辑
@@ -29,5 +30,5 @@ public interface UserInfoService  extends IService<UserInfo> {
     * @author King
     * @date 2024/10/21 16:07
     */
-    Boolean register(UserInfo userInfo);
+    Boolean register(UserInfo userInfo, HttpSession httpSession);
 }
