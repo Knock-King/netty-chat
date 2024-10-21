@@ -22,6 +22,12 @@
         <result column="ip_receive_location" property="ipReceiveLocation"/>
         <result column="data_status" property="dataStatus"/>
     </resultMap>
+    <select id="getMsgLogsByOneUserId" resultType="com.king.model.po.ChatFriendMsgLogs">
+        select *
+        from `netty-chat`.chat_friend_msg_logs
+        where send_id = #{userId}
+           or receive_id = #{userId}
+    </select>
 
 
 </mapper>

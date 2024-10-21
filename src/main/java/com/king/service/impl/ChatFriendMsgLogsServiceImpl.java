@@ -1,5 +1,6 @@
 package com.king.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.king.mapper.ChatFriendInfoMapper;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -73,5 +75,45 @@ public class ChatFriendMsgLogsServiceImpl extends ServiceImpl<ChatFriendMsgLogsM
             return logs;
         }).collect(Collectors.toList());
         saveOrUpdateBatch(chatFriendMsgLogs);
+    }
+
+    @Override
+    public void cleanMsgs(Long userId) {
+        List<ChatFriendMsgLogs> friendMsgLogs = chatFriendMsgLogsMapper.getMsgLogsByOneUserId(userId);
+        friendMsgLogs.forEach(msgLogs -> {
+            cleanMsgMethod(userId, msgLogs);
+        });
+    }
+
+    @Override
+    public void cleanMsg(Long msgId, Long userId) {
+        ChatFriendMsgLogs msgLogs = getById(msgId);
+        cleanMsgMethod(userId, msgLogs);
+    }
+
+    private void cleanMsgMethod(Long userId, ChatFriendMsgLogs msgLogs) {
+        String receiveId = msgLogs.getReceiveId();
+        String sendId = msgLogs.getSendId();
+        if (receiveId.equals(userId) || sendId.equals(userId)) {
+            //该用户是者这条消息拥有者之一
+            String cleanMsgUserIds = msgLogs.getCleanMsgUserIds();
+            if (ObjectUtils.isEmpty(cleanMsgUserIds)) {
+                //两人都未清空
+                Long[] ids = new Long[1];
+                ids[0] = userId;
+                String userIds = JSON.toJSONString(ids);
+                msgLogs.setCleanMsgUserIds(userIds);
+            } else {
+                //有一人清空
+                Long[] ids = JSON.parseObject(cleanMsgUserIds, Long[].class);
+                Long id = ids[0];
+                Long[] cleanIds = new Long[2];
+                cleanIds[0] = id;
+                cleanIds[1] = userId;
+                String userIds = JSON.toJSONString(cleanIds);
+                msgLogs.setCleanMsgUserIds(userIds);
+            }
+            updateById(msgLogs);
+        }
     }
 }

@@ -33,5 +33,23 @@ public interface ChatFriendMsgLogsService extends IService<ChatFriendMsgLogs> {
     */
     void updateOfflineStatus(Long msgId);
 
+    /**
+    * @description 批量签收消息
+    * @param signIdList 签收id的list
+    * @return void
+    * @author King
+    * @date 2024/10/21 16:57
+    */
     void batchSignMsgs(List<String> signIdList);
+
+    /**
+    * @description 清空聊天消息
+    * @param userId
+    * @return void
+    * @author King
+    * @date 2024/10/21 17:07
+    */
+    void cleanMsgs(Long userId);
+
+    void cleanMsg(Long msgId,Long userId);
 }

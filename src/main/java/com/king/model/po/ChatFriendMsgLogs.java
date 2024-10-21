@@ -79,4 +79,9 @@ public class ChatFriendMsgLogs implements Serializable {
      * 数据状态   1、正常     2、删除
      */
     private Integer dataStatus;
+
+    /**
+     * 清空这条消息的ids(数组)
+     */
+    private String cleanMsgUserIds;
 }
