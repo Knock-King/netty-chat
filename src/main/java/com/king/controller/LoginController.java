@@ -4,10 +4,7 @@ import com.king.model.entity.RestResponse;
 import com.king.model.po.UserInfo;
 import com.king.service.UserInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -32,6 +29,18 @@ public class LoginController {
     @PostMapping("/register")
     public RestResponse<Boolean> register(@RequestBody UserInfo userInfo, HttpSession httpSession) {
         Boolean flag = userInfoService.register(userInfo, httpSession);
+        return RestResponse.success(flag);
+    }
+
+    @PostMapping("/updatePassword")
+    public RestResponse<Boolean> updatePassword(String newPassword,String oldPassword,Long accountNumber ) {
+        Boolean flag = userInfoService.updatePassword(newPassword, oldPassword,accountNumber);
+        return RestResponse.success(flag);
+    }
+
+    @PostMapping("/logout")
+    public RestResponse<Boolean> logout(HttpSession httpSession) {
+        Boolean flag = userInfoService.logout(httpSession);
         return RestResponse.success(flag);
     }
 }

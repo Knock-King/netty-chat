@@ -6,6 +6,7 @@ import com.king.exception.NettyChatException;
 import com.king.mapper.UserInfoMapper;
 import com.king.model.po.UserInfo;
 import com.king.service.UserInfoService;
+import com.king.utils.BaseContextUtils;
 import com.king.utils.IdWorkerUtils;
 import com.king.utils.IpUtil;
 import lombok.extern.log4j.Log4j;
@@ -47,7 +48,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         info.setIpAddress(ipAddr);
         info.setIpAddressTime(LocalDateTime.now());
         updateById(info);
-        httpSession.setAttribute("netty-chat-user",info.getId());
+        httpSession.setAttribute("netty-chat-user", info.getId());
         return true;
     }
 
@@ -57,7 +58,25 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         userInfo.setAccountNumber(IdWorkerUtils.getInstance().nextId());
         userInfo.setUserStatus(1);
         boolean save = save(userInfo);
-        httpSession.setAttribute("netty-chat-user",userInfo.getId());
+        httpSession.setAttribute("netty-chat-user", userInfo.getId());
         return save;
+    }
+
+    @Override
+    public Boolean logout(HttpSession httpSession) {
+        BaseContextUtils.removeCurrentId();
+        return true;
+    }
+
+    @Override
+    public Boolean updatePassword(String newPassword, String oldPassword, Long accountNumber) {
+        LambdaQueryWrapper<UserInfo> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserInfo::getAccountNumber, accountNumber);
+        UserInfo info = getOne(wrapper);
+        if (!info.getPassword().equals(oldPassword)) {
+            NettyChatException.cast("旧密码不匹配，请重新输入旧密码");
+        }
+        info.setPassword(newPassword);
+        return updateById(info);
     }
 }

@@ -31,4 +31,24 @@ public interface UserInfoService  extends IService<UserInfo> {
     * @date 2024/10/21 16:07
     */
     Boolean register(UserInfo userInfo, HttpSession httpSession);
+
+    /**
+    * @description 用户登出
+    * @param httpSession
+    * @return java.lang.Boolean
+    * @author King
+    * @date 2024/10/21 16:45
+    */
+    Boolean logout(HttpSession httpSession);
+
+    /**
+    * @description TODO
+     * @param oldPassword
+     * @param accountNumber
+    * @return java.lang.Boolean
+    * @author King
+    * @date 2024/10/21 16:48
+    */
+    Boolean updatePassword(String newPassword, String oldPassword, Long accountNumber);
+
 }
