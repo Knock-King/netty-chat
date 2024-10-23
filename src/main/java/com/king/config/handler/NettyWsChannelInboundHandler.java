@@ -143,7 +143,7 @@ public class NettyWsChannelInboundHandler extends SimpleChannelInboundHandler<Te
             ChatFriendRequestLogsService chatFriendRequestLogsService
                     = (ChatFriendRequestLogsService) SpringBeanUtil
                     .getBean("ChatFriendRequestLogsServiceImpl");
-            chatFriendRequestLogsService.AddFriend(chatMsg);
+            chatFriendRequestLogsService.friendApplication(chatMsg);
         } else if (MsgActionEnum.GROUP_MSG.type.equals(action)) {
             //群聊消息
         }

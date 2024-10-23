@@ -41,7 +41,7 @@ public class ChatFriendRequestLogs implements Serializable {
      */
     private String remark;
     /**
-     * 数据状态   1、正常     2、删除
+     * 数据状态   1、正常     2、申请者删除 3、被申请者删除
      */
     private Integer dataStatus;
 }
