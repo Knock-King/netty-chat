@@ -38,9 +38,19 @@ public interface ChatFriendInfoService extends IService<ChatFriendInfo> {
      * @param userId
      * @param friendId
      * @return java.lang.Boolean
-     * @description 添加朋友
+     * @description 添加朋友,记录两天数据
      * @author King
      * @date 2024/1/24 13:53
      */
     Boolean addFriend(Long userId, Long friendId);
+
+    /**
+    * @description 修改朋友昵称
+    * @param userId
+     * @param friendId
+    * @return java.lang.Boolean
+    * @author King
+    * @date 2024/10/23 14:06
+    */
+    Boolean updateFriendNickname(Long userId,Long friendId,String nickName);
 }
