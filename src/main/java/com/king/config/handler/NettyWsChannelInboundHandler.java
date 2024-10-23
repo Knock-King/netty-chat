@@ -5,6 +5,7 @@ import com.king.model.entity.ChatMsg;
 import com.king.model.entity.DataContent;
 import com.king.model.enums.MsgActionEnum;
 import com.king.model.po.ChatFriendMsgLogs;
+import com.king.service.ChatFriendInfoService;
 import com.king.service.ChatFriendMsgLogsService;
 import com.king.service.ChatFriendRequestLogsService;
 import com.king.service.impl.ChatFriendMsgLogsServiceImpl;
@@ -52,8 +53,12 @@ public class NettyWsChannelInboundHandler extends SimpleChannelInboundHandler<Te
             //当websocket 第一次open的时候，初始化channel，把用的channel和userid关联起来
             String sendId = dataContent.getChatMsg().getSendId();
             UserChannelRel.put(sendId, currentChannel);
-        }
-        else if (MsgActionEnum.CHAT.type.equals(action)) {
+            //更新朋友信息表的信息为在线
+            ChatFriendInfoService chatFriendInfoService
+                    = (ChatFriendInfoService) SpringBeanUtil
+                    .getBean("ChatFriendInfoServiceImpl");
+            chatFriendInfoService.updateOnline(Long.valueOf(sendId), "在线");
+        } else if (MsgActionEnum.CHAT.type.equals(action)) {
             //聊天消息
             //把聊天记录保存到数据库，同时标记消息的签收状态[未签收]
             ChatFriendMsgLogsService chatFriendMsgLogsService
@@ -110,8 +115,7 @@ public class NettyWsChannelInboundHandler extends SimpleChannelInboundHandler<Te
                                     JsonUtils.objectToJson(dataContentMsg)));
                 }
             }
-        }
-        else if (MsgActionEnum.SIGNED.type.equals(action)) {
+        } else if (MsgActionEnum.SIGNED.type.equals(action)) {
             //消息签收
             log.info("消息签收...");
             // 扩展字段在signed类型的消息中，代表需要去签收的消息id，逗号间隔
@@ -131,8 +135,7 @@ public class NettyWsChannelInboundHandler extends SimpleChannelInboundHandler<Te
                 ChatFriendMsgLogsServiceImpl chatMsgLogsService = (ChatFriendMsgLogsServiceImpl) SpringBeanUtil.getBean("chatFriendMsgLogsServiceImpl");
                 chatMsgLogsService.batchSignMsgs(signIdList);
             }
-        }
-        else if (MsgActionEnum.KEEPALIVE.type.equals(action)) {
+        } else if (MsgActionEnum.KEEPALIVE.type.equals(action)) {
             //客户端保持心跳
             log.info("收到来自channel为[" + currentChannel + "]的心跳包...");
         } else if (MsgActionEnum.PULL_FRIEND.type.equals(action)) {
@@ -164,6 +167,12 @@ public class NettyWsChannelInboundHandler extends SimpleChannelInboundHandler<Te
         String channelId = ctx.channel().id().asShortText();
         // 当触发handlerRemoved，ChannelGroup会自动移除对应客户端的channel
         users.remove(ctx.channel());
+        //更新朋友信息表的信息为离线
+        String userId = UserChannelRel.getUserIdByChannel(ctx.channel());
+        ChatFriendInfoService chatFriendInfoService
+                = (ChatFriendInfoService) SpringBeanUtil
+                .getBean("ChatFriendInfoServiceImpl");
+        chatFriendInfoService.updateOnline(Long.valueOf(userId), "离线");
         log.info("客户端被移除，channelId为：" + channelId);
     }
 

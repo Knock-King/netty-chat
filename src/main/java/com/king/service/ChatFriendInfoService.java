@@ -53,4 +53,14 @@ public interface ChatFriendInfoService extends IService<ChatFriendInfo> {
     * @date 2024/10/23 14:06
     */
     Boolean updateFriendNickname(Long userId,Long friendId,String nickName);
+
+    /**
+     * @param userId
+     * @param onlineStatus 在线状态（在线、离线、空值）
+     * @return void
+     * @description 用户上线或者下线之后更新在线状态
+     * @author King
+     * @date 2024/10/23 15:41
+     */
+    void updateOnline(Long userId, String onlineStatus);
 }

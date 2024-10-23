@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.king.mapper.ChatFriendRequestLogsMapper;
 import com.king.model.dto.ChatFriendRequestLogsDto;
 import com.king.model.entity.ChatMsg;
-import com.king.model.po.ChatFriendInfo;
 import com.king.model.po.ChatFriendRequestLogs;
 import com.king.model.po.UserInfo;
 import com.king.service.ChatFriendInfoService;

@@ -346,21 +346,13 @@
             getUserInformation() {
                 var that = this;
                 $.ajax({
-                    url: "../../user/user/getMyselfInfo",
+                    url: "../../chat/userInfo/getUserInfo",
                     type: "get",
-                    headers: {
-                        Authorization: "bearer " + accessToken_user,
-                    },
                     success: function (res) {
                         if (res.code == 200) {
                             that.imChatUser = res.result;
                             that.setupWebSocket(); // 创建WebSocket连接
-
-
-                        } else {
-                            flag(res.code, res.msg);
                         }
-
                     },
                     error: function () {
                     },
@@ -370,11 +362,8 @@
             getFriendList() {
                 var that = this;
                 $.ajax({
-                    url: "../../chat/chat/getFriendList",
+                    url: "../../chat/chatFriendInfo/getChatFriendList",
                     type: "get",
-                    headers: {
-                        Authorization: "bearer " + accessToken_user,
-                    },
                     success: function (res) {
                         if (res.code == 200) {
                             let result = res.result;
@@ -433,10 +422,7 @@
                                     }, 10); //单位是毫秒
                                 }
                             }
-                        } else {
-                            flag(res.code, res.msg);
                         }
-
                     },
                     error: function () {
                     },

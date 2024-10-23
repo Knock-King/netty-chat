@@ -77,4 +77,8 @@ public class UserInfo implements Serializable {
      * 获取ip地址的最新时间
      */
     private LocalDateTime ipAddressTime;
+    /**
+     * 是否让别人知道自己的在线信息（1：允许，2：不允许）
+     */
+    private Integer onlineStatus;
 }

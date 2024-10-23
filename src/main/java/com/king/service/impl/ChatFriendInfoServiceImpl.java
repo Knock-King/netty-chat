@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 public class ChatFriendInfoServiceImpl extends ServiceImpl<ChatFriendInfoMapper, ChatFriendInfo> implements ChatFriendInfoService {
     @Autowired
     private UserInfoService userInfoService;
+    @Autowired
+    private ChatFriendInfoMapper chatFriendInfoMapper;
 
     @Override
     public List<ChatFriendInfoDto> selectFriendList(Long userId) {
@@ -107,5 +109,27 @@ public class ChatFriendInfoServiceImpl extends ServiceImpl<ChatFriendInfoMapper,
         }
         friendInfo.setFriendRemark(nickName);
         return updateById(friendInfo);
+    }
+
+    @Override
+    public void updateOnline(Long userId, String onlineStatus) {
+        if (ObjectUtils.isEmpty(userId)) {
+            return;
+        }
+        LambdaQueryWrapper<ChatFriendInfo> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ChatFriendInfo::getFriendUserId, userId);
+        wrapper.eq(ChatFriendInfo::getUserStatus,1);
+        wrapper.eq(ChatFriendInfo::getFriendStatus,1);
+        List<ChatFriendInfo> list = list(wrapper);
+        List<ChatFriendInfo> infoList = list.stream().peek(item -> {
+            UserInfo userinfo = userInfoService.getById(item.getFriendUserId());
+            Integer status = userinfo.getOnlineStatus();
+            if (status == 1) {
+                item.setRemark(onlineStatus);
+            } else {
+                item.setRemark("");
+            }
+        }).collect(Collectors.toList());
+        updateBatchById(infoList);
     }
 }
